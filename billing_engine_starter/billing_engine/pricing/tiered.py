@@ -61,5 +61,3 @@ class TieredPricing(PricingStrategy):
                     c=0
             total=total+(i.unit_price*c)
         return total
-Tiers=  [(0, 1000, "₹2.00") , (1000, 5000, "₹1.50"), (5000, None, "₹1.00") ]
-Quantity = 6000
