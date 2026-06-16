@@ -34,9 +34,32 @@ class TieredPricing(PricingStrategy):
     """Charges across multiple price tiers based on cumulative quantity."""
 
     def __init__(self, tiers: list[Tier]) -> None:
-        # TODO Day 1
-        raise NotImplementedError("Day 1: implement TieredPricing.__init__")
+        if not tiers:
+            raise ValueError("tier should have some value")
+        for i in range(len(tiers)):
+            if tiers[i].from_units != tiers[i].to_units:
+                raise ValueError("tier should not be empty")
+            if tiers[i].to_units is None and i!=len(tiers):
+                raise ValueError("only last element can be zero")
+        for i in tiers:
+            if tiers.unit_price.currency!=tiers.unit_price.currency:
+                raise ValueError ("all curency value should be same")
+        self.tiers=tiers
 
     def calculate(self, quantity: int) -> Money:
-        # TODO Day 1
-        raise NotImplementedError("Day 1: implement TieredPricing.calculate")
+        if quantity<0:
+            raise ValueError("quantity can't be negative")
+        currency=self.tiers[0].unit_price.currency
+        total=Money.zero(currency)
+        for i in self.tiers:
+            if i.to_units is None:
+                c=max(0,quantity-i.from_units)
+            else:
+                if quantity>i.from_units:
+                    c=min(quantity,i.to_units)-i.from_units
+                else:
+                    c=0
+            total=total+(i.unit_price*c)
+        return total
+Tiers=  [(0, 1000, "₹2.00") , (1000, 5000, "₹1.50"), (5000, None, "₹1.00") ]
+Quantity = 6000
