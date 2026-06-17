@@ -4,7 +4,7 @@ PaymentGateway — abstract + two mock implementations.
 In real life this would talk to Stripe / Razorpay / Adyen. For the project
 we use mocks so tests are deterministic and the demo never hits the network.
 """
-
+import random
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
@@ -41,14 +41,12 @@ class ScriptedGateway(PaymentGateway):
     """
 
     def __init__(self, results: list[PaymentResult]) -> None:
-        # TODO Day 3
-        raise NotImplementedError("Day 3: implement ScriptedGateway.__init__")
-
+        self.results=results
+        self.index=0
     def charge(self, invoice: Invoice) -> PaymentResult:
-        # TODO Day 3
-        raise NotImplementedError("Day 3: implement ScriptedGateway.charge")
-
-
+        r=self.results[self.index]
+        self.index += 1
+        return r
 # ----------------------------------------------------------------
 # Fake-random — for the CLI demo
 # ----------------------------------------------------------------
@@ -56,9 +54,11 @@ class FakeRandomGateway(PaymentGateway):
     """Succeeds at a configurable rate; seeded for reproducibility."""
 
     def __init__(self, success_rate: float = 0.7, seed: Optional[int] = None) -> None:
-        # TODO Day 3
-        raise NotImplementedError("Day 3: implement FakeRandomGateway.__init__")
+      self.success_rate=success_rate
+      self.random=random.Random(seed)
 
     def charge(self, invoice: Invoice) -> PaymentResult:
-        # TODO Day 3
-        raise NotImplementedError("Day 3: implement FakeRandomGateway.charge")
+        if self.random.random()<self.success_rate:
+            return PaymentResult(True)
+        else:
+            return PaymentResult(False,"INSUFFICIENT FUND")

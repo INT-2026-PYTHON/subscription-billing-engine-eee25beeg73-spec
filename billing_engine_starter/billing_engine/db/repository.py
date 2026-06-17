@@ -152,16 +152,18 @@ class SubscriptionRepository:
             return Subscription(id=r["id"],customer_id=r["customer_id"],plan_id=r["plan_id"],status=SubscriptionStatus(r["status"]),current_period_start=date.fromisoformat(r["current_period_start"]),current_period_end=date.fromisoformat(r["current_period_end"]),trial_end= date.fromisoformat(r["trial_end"]),discount_id=r["discount_id"],past_due_since= date.fromisoformat(r["past_due_since"]),)
     
     def update_period(self, subscription_id: int, new_start: date, new_end: date) -> None:
-       # TODO Day 3.
-       raise NotImplementedError("Day 3: implement SubscriptionRepository.update_period")
+       with self.db.connect() as c:
+           c.execute((new_start,new_end,subscription_id))
+
     def update_status(
         self,
         subscription_id: int,
         new_status: SubscriptionStatus,
         past_due_since: Optional[date] = None,
     ) -> None:
-        # TODO Day 3.
-        raise NotImplementedError("Day 3: implement SubscriptionRepository.update_status")
+        with self.db.connect() as c:
+            status_val=new_status.value if hasattr(new_status,"value") else new_status
+            c.execute((status_val,subscription_id))
 
     def update_plan(self, subscription_id: int, new_plan_id: int) -> None:
         """Switch the subscription to a different plan (used by upgrade flow)."""
@@ -214,17 +216,20 @@ class InvoiceRepository:
             if r:
                 return Invoice(id=r["id"],subscription_id=r["subscription_id"],period_start=date.fromisoformat(r["period_start"]),period_end=date.fromisoformat(r["period_end"]),subtotal=Money(r["subtotal"], currency),discount_total=Money(r["discount_total"], currency),tax_total=Money(r["tax_total"], currency),total=Money(r["total"], currency),status=InvoiceStatus(r["status"]),issued_at=datetime.fromisoformat(r["issued_at"]),pdf_path=r["pdf_path"],)
     def count_for_subscription(self, subscription_id: int) -> int:
-        """Used by FirstMonthFree discount."""
-        # TODO Day 2.
-        raise NotImplementedError("Day 2: implement InvoiceRepository.count_for_subscription")
+       with self.db.connect() as c:
+           r=c.execute((subscription_id,)).fetchone()
+           if r:
+               return r[0]
+           else:
+               return 0
 
     def mark_paid(self, invoice_id: int) -> None:
-        # TODO Day 2.
-        raise NotImplementedError("Day 2: implement InvoiceRepository.mark_paid")
+        with self.db.connect() as c:
+            c.execute(("paid",invoice_id))
 
     def mark_failed(self, invoice_id: int) -> None:
-        # TODO Day 2.
-        raise NotImplementedError("Day 2: implement InvoiceRepository.mark_failed")
+        with self.db.connect() as c:
+            c.execute("falied",invoice_id)
 
     def set_pdf_path(self, invoice_id: int, path: str) -> None:
         # TODO Day 4.
@@ -262,14 +267,16 @@ class LedgerRepository:
         self.db = db
 
     def add(self, entry: LedgerEntry) -> LedgerEntry:
-        # TODO Day 2.
-        raise NotImplementedError("Day 2: implement LedgerRepository.add")
+       c=self.db.execute((entry.customer_id,entry.amount,entry.created_at,))
+       r=c.fetchone()
+       if r:
+           e=r["id"]
+       return e
 
     def list_for_customer(self, customer_id: int) -> list[LedgerEntry]:
-        # TODO Day 2.
-        raise NotImplementedError("Day 2: implement LedgerRepository.list_for_customer")
-
-    # ✅ These two methods are intentionally implemented to REJECT — do not override.
+        c=self.db.execute((customer_id,))
+        r=c.fetchall
+        return r
     def update(self, *args, **kwargs):
         raise NotImplementedError("Ledger is append-only. Post a reversing entry instead.")
 
@@ -292,13 +299,14 @@ class PaymentAttemptRepository:
         failure_reason: Optional[str],
         next_retry_at: Optional[datetime],
     ) -> int:
-        # TODO Day 3.
-        raise NotImplementedError("Day 3: implement PaymentAttemptRepository.add")
-
+       cursor=self.db.execute((invoice_id,attempt_no,status,failure_reason,next_retry_at,))
+       res=cursor.fetchone()
+       return res[0] if res else cursor.lastrowid
     def list_for_invoice(self, invoice_id: int) -> list[dict]:
-        # TODO Day 3.
-        raise NotImplementedError("Day 3: implement PaymentAttemptRepository.list_for_invoice")
-
+        c=self.db.execute((invoice_id,))
+        return c.fetchall()        
     def count_for_invoice(self, invoice_id: int) -> int:
-        # TODO Day 3.
-        raise NotImplementedError("Day 3: implement PaymentAttemptRepository.count_for_invoice")
+        c=self.db.execute((invoice_id,))
+        r=c.fetchone()
+        return r[0] if r else 0
+    

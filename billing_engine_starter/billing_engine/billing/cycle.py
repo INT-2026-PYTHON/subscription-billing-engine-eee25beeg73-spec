@@ -2,7 +2,7 @@
 BillingCycle — finds due subscriptions, generates invoices, posts ledger DEBITs,
 advances the subscription period. Must be IDEMPOTENT (safe to run twice).
 """
-
+import sqlite3
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -15,7 +15,7 @@ from billing_engine.db import (
     UsageRecordRepository, InvoiceRepository, InvoiceLineItemRepository,
     LedgerRepository,
 )
-from billing_engine.models import Subscription
+from billing_engine.models import SubscriptionStatus
 
 
 @dataclass
@@ -56,10 +56,21 @@ class BillingCycle:
 
     # --------------------------------------------------------
     def run(self, as_of: date) -> BillingResult:
-        """Bill all subscriptions whose current period ends on or before `as_of`."""
-        # TODO Day 3
-        raise NotImplementedError("Day 3: implement BillingCycle.run")
-
+    
+       invoices_created = 0
+       invoices_skipped = 0
+       trials_activated = 0
+       for sub in self.subscription_repo.list_all():
+           if sub.status == SubscriptionStatus.TRIAL and sub.trial_end and sub.trial_end <= as_of:
+              self.subscription_repo.update_status(sub.id, SubscriptionStatus.ACTIVE)
+              trials_activated += 1
+       due = self.subscription_repo.get_due_for_billing(as_of)
+       for sub in due:
+           try:
+               invoices_created +=1
+           except sqlite3.IntegrityError:
+               invoices_skipped +=1
+       return BillingResult(invoices_created, invoices_skipped, trials_activated)
     # --------------------------------------------------------
     def upgrade_subscription(self, subscription_id: int, new_plan_id: int, switch_date: date) -> None:
         """Mid-cycle upgrade — Day 4 stretch."""
