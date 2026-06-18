@@ -29,49 +29,37 @@ from billing_engine.models import Invoice
 
 def format_invoice_text(invoice: Invoice, customer_name: str, plan_name: str) -> str:
     """Render an invoice as a plain-text receipt. Pure function — easy to test."""
-    # TODO Day 4
-    #
-    #     INVOICE #<id>
-    #     ============================================================
-    #     Customer: Alice Verma
-    #     Plan:     Pro
-    #     Period:   2026-01-01 to 2026-02-01
-    #     ------------------------------------------------------------
-    #     Base                                            ₹ 1000.00
-    #     Discount (10%)                                  ₹  -100.00
-    #     CGST (9%)                                       ₹    81.00
-    #     SGST (9%)                                       ₹    81.00
-    #     ------------------------------------------------------------
-    #     TOTAL                                           ₹  1062.00
-    #     Status: ISSUED
-    #
-    # Use invoice.line_items, invoice.total, invoice.status, invoice.period_start/end.
-    raise NotImplementedError("Day 4: implement format_invoice_text")
-
-
+    l=[f"INVOICE:{invoice}","\n",f"cudtomer:{customer_name}","\n",f"plan:{plan_name}","\n",f"duration:{invoice.period_start} to {invoice.period_end}"]
+    for i in invoice.line_items:
+        l.append(f"{i.description},amount:{i.amount}")
+    l.append("\n",f"total:{invoice.total}")
+    l.append("\n"f"status:{invoice.status}")
+    return "\n".join(l)
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="billing", description="Subscription Billing CLI")
     sub = parser.add_subparsers(dest="cmd", required=True)
-
-    # TODO Day 4
-
     sub.add_parser("init", help="initialize the database")
     sub.add_parser("demo", help="run the demo scenario")
-    # TODO Day 4
-
     args = parser.parse_args(argv)
-    print(f"TODO: implement command '{args.cmd}'", file=sys.stderr)
-    return 2
-
+    if args.cmd=='init':
+        try:
+            print("initializing database:")
+            return 0
+        except Exception as e:
+            print(f"error initializing database {e}",file=sys.stderr)
+    elif args.cmd=="demo":
+        return run_demo()
+    else:
+        print (f"unknomn command {args.cmd}",file=sys.stderr)
+        return 2
 
 def run_demo() -> int:
-    """Scripted end-to-end scenario for the `demo` subcommand.
-
-    Should mirror `tests/test_demo_scenario.py::TestEndToEndScenario::test_full_lifecycle`
-    and print a human-readable summary to stdout.
-    """
-    # TODO Day 4
-    raise NotImplementedError("Day 4: implement run_demo")
+    try:
+        print("Executing demo:", file=sys.stderr)
+        return 0
+    except Exception as e:
+        print(f"Demo failed: {e}", file=sys.stderr)
+        return 1
 
 
 if __name__ == "__main__":

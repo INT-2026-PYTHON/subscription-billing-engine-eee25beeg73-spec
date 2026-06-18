@@ -16,5 +16,4 @@ class FlatRate(PricingStrategy):
         self.amount=amount
 
     def calculate(self, quantity: int) -> Money:
-        # TODO Day 1
         return self.amount

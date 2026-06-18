@@ -163,12 +163,11 @@ class SubscriptionRepository:
     ) -> None:
         with self.db.connect() as c:
             status_val=new_status.value if hasattr(new_status,"value") else new_status
-            c.execute((status_val,subscription_id))
+            c.execute((status_val,subscription_id,past_due_since))
 
     def update_plan(self, subscription_id: int, new_plan_id: int) -> None:
-        """Switch the subscription to a different plan (used by upgrade flow)."""
-        # TODO Day 4.
-        raise NotImplementedError("Day 4: implement SubscriptionRepository.update_plan")
+       with self.db.connect() as c:
+           c.execute((new_plan_id,subscription_id))
 
 
 # ============================================================
@@ -232,9 +231,8 @@ class InvoiceRepository:
             c.execute("falied",invoice_id)
 
     def set_pdf_path(self, invoice_id: int, path: str) -> None:
-        # TODO Day 4.
-        raise NotImplementedError("Day 4: implement InvoiceRepository.set_pdf_path")
-
+        with self.db.connect() as c:
+            c.execute((path,invoice_id))
 
 class InvoiceLineItemRepository:
     def __init__(self, db: Database) -> None:
